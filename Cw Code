@@ -1,0 +1,35 @@
+def hide_message(filename, message):
+    """Hides the message in the specified file."""
+    with open(filename, 'a') as file:
+        file.write(message + '\n')  
+
+def extract_message(filename):
+    """Extracts the last hidden message from the specified file."""
+    try:
+        with open(filename, 'r') as file:
+            lines = file.readlines()
+            if lines:
+                return lines[-1].strip()  
+            else:
+                return None
+    except FileNotFoundError:
+        return None
+
+def main():
+    print("Message Hiding Application")
+    
+    filename = input("Enter the filename to hide the message in (e.g. messages.txt): ")
+
+    message = input("Enter the secret message to hide: ")
+    
+    hide_message(filename, message)
+    print(f"Message hidden in {filename}")
+    
+    extracted_message = extract_message(filename)
+    if extracted_message:
+        print(f"Extracted Message: {extracted_message}")
+    else:
+        print("No message found.")
+
+if __name__ == "__main__":
+    main()
